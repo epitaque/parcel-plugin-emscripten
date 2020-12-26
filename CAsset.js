@@ -116,14 +116,19 @@ class CAsset extends Asset {
 		await mkdirp(this.options.cacheDir);
 
 		let args = [
-			// '-Os',
+			'-O3',
+			// '-g4',
 			'-s', "WASM=1",
 			'-s', "MODULARIZE=1",
+			'-s', "EXPORT_ALL=1",
+			'-s', "ALLOW_MEMORY_GROWTH=1",
 			// '-s', 'ASSERTIONS=1',
+			'-s', 'EXPORTED_FUNCTIONS=["_make_svo", "_malloc", "_free"]',
 			'-s', 'EXTRA_EXPORTED_RUNTIME_METHODS=["ccall", "cwrap"]',
 			this.name,
 			'-o',
 			this.outPath
+			// '--source-map-base', "http://localhost:1234/"
 		];
 
 		if(this.options.minify){
@@ -134,13 +139,19 @@ class CAsset extends Asset {
 			args = args.concat(this.args)
 		}
 
-		await exec('emcc', args, {cwd: path.dirname(this.name)});
+		let cmd = process.platform === 'win32' ? 'emcc.bat' : 'emcc';
+		await exec(cmd, args, {cwd: path.dirname(this.name)});
 
 		if(args.includes("WASM=1")){
 			await fs.copyFile(
 				path.join(this.options.cacheDir, name).slice(0,-3)+".wasm",
 				path.join(this.options.outDir, name).slice(0,-3)+".wasm"
 			)
+
+			// await fs.copyFile(
+			// 	path.join(this.options.cacheDir, name).slice(0,-3)+".wasm.map",
+			// 	path.join(this.options.outDir, name).slice(0,-3)+".wasm.map"
+			// )
 		}
 	}
 
